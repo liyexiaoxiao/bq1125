@@ -1,0 +1,7 @@
+{
+  "功耗电流": "dspace_power_current",
+  "整车State状态": "dspace_vehicle_state",
+  "总线报文发送标志位": "dspace_bus_message_flag",
+  "PDCU唤醒原因": "dspace_pdcu_wake_reason",
+  "整车模式": "dspace_vehicle_mode"
+}

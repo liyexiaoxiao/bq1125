@@ -1,0 +1,16 @@
+# ref https://flask.palletsprojects.com/en/2.3.x/changes/ for information
+Flask==2.0.3
+Flask-SQLAlchemy==2.5.1
+Flask-Login==0.5.0
+Flask-moment==1.0.5
+mysql-connector-python==8.0.33
+Flask-Excel==0.0.7
+pyexcel-xlsx==0.6.0
+Werkzeug==2.0.3
+watchdog==2.3.1
+flask-simple-captcha==5.5.5
+psutil==5.9.0
+flask_migrate==4.0.1
+SQLAlchemy==1.4.54
+numpy==1.24.4
+requests==2.32.3

@@ -1,0 +1,13 @@
+python38.zip
+../site-packages
+../site-packages/win32
+../site-packages/win32/lib
+.
+..
+# 开发
+../ve/Lib/site-packages
+../ve/Lib/site-packages/win32
+../ve/Lib/site-packages/win32/lib
+
+# Uncomment to run site.main() automatically
+import site

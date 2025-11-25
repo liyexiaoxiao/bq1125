@@ -1,0 +1,103 @@
+{"value":[
+	{
+		"in_put":
+		{
+			"name": "CC2电压",
+			"uuid": "e7f8ff4b-14dc-11f0-b1af-6c0b84df158f",
+			"max": "8.2",
+			"min": "4.8",
+			"in_type": 1,
+			"in_range": 1,
+			"step_len": 0.1
+		},
+		"out_put":
+		[
+
+			{"name": "整车State状态", "uuid": "35695f8f-14dd-11f0-a9e0-6c0b84df158f", "out_type": 1, "out_range": 2, "value":170},
+			{"name": "整车模式", "uuid": "14b7c71b-14df-11f0-8f04-6c0b84df158f", "out_type": 1, "out_range": 2, "value":5}
+
+		],
+		"error":
+		[
+			{"name": "功耗电流", "uuid": "630c86f7-14dd-11f0-ad8e-6c0b84df158f", "out_type": 1, "out_range": 3, "value":0.05},
+			{"name": "总线报文发送标志位", "uuid": "b0bf7c0b-14dd-11f0-a72f-6c0b84df158f", "out_type": 1, "out_range": 2, "value":0}
+		],
+		"stuck":
+		[
+			{"name": "功耗电流", "uuid": "630c86f7-14dd-11f0-ad8e-6c0b84df158f", "out_type": 1, "out_range": 1, "value":0.05},
+			{"name": "整车State状态", "uuid": "35695f8f-14dd-11f0-a9e0-6c0b84df158f", "out_type": 1, "out_range": 2, "value":10},
+			{"name": "总线报文发送标志位", "uuid": "b0bf7c0b-14dd-11f0-a72f-6c0b84df158f", "out_type": 1, "out_range": 2, "value":1},
+			{"name": "PDCU唤醒原因", "uuid": "c8391a2f-14dd-11f0-b145-6c0b84df158f", "out_type": 1, "out_range": 2, "value":5},
+			{"name": "整车模式", "uuid": "14b7c71b-14df-11f0-8f04-6c0b84df158f", "out_type": 1, "out_range": 2, "value":5}
+		]
+
+	},
+	{
+		"in_put":
+		[
+			{
+				"name": "供电电压",
+				"uuid": "2ba96003-14dc-11f0-a0b8-6c0b84df158f",
+				"max": "",
+				"min": "0",
+				"in_type": 2,
+				"in_range": 2,
+				"step_len": 0.1
+			},
+			{
+				"name": "网络唤醒报文使能状态",
+				"uuid": "6f9dee83-14de-11f0-9689-6c0b84df158f",
+				"max": "",
+				"min": "0",
+				"in_type": 2,
+				"in_range": 2,
+				"step_len": 0
+			},
+			{
+				"name": "CC2电压",
+				"uuid": "e7f8ff4b-14dc-11f0-b1af-6c0b84df158f",
+				"max": "",
+				"min": "12",
+				"in_type": 2,
+				"in_range": 2,
+				"step_len": 0.1
+			},
+			{
+				"name": "CP幅值",
+				"uuid": "e7f8ff4b-14dc-11f0-b1af-6c0b84df158f",
+				"max": "",
+				"min": "0",
+				"in_type": 2,
+				"in_range": 2,
+				"step_len": 0.1
+			},
+			{
+				"name": "CC电压值",
+				"uuid": "e7f8ff4b-14dc-11f0-b1af-6c0b84df158f",
+				"max": "",
+				"min": "12",
+				"in_type": 2,
+				"in_range": 2,
+				"step_len": 0.1
+			}
+		],
+		"out_put":
+		[
+			{"name": "功耗电流", "uuid": "630c86f7-14dd-11f0-ad8e-6c0b84df158f", "out_type": 1, "out_range": 3, "value":0.05},
+			{"name": "整车State状态", "uuid": "35695f8f-14dd-11f0-a9e0-6c0b84df158f", "out_type": 2, "out_range": 2, "value":9},
+			{"name": "总线报文发送标志位", "uuid": "b0bf7c0b-14dd-11f0-a72f-6c0b84df158f", "out_type": 2, "out_range": 2, "value":0}
+
+		],
+		"error":
+		[
+			{"name": "功耗电流", "uuid": "630c86f7-14dd-11f0-ad8e-6c0b84df158f", "out_type": 1, "out_range": 1, "value":0.05},
+			{"name": "总线报文发送标志位", "uuid": "b0bf7c0b-14dd-11f0-a72f-6c0b84df158f", "out_type": 2, "out_range": 2, "value":1},
+			{"name": "整车State状态", "uuid": "35695f8f-14dd-11f0-a9e0-6c0b84df158f", "out_type": 2, "out_range": 2, "value":10}
+		],
+		"stuck":
+		[
+
+		]
+
+	}
+]}
