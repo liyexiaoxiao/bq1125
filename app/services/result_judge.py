@@ -63,6 +63,8 @@ class ResultJudge:
 
         # 数据库插入数据后的ID
         self.run_id = 0
+        # 最近一次触发分析的 run_id，避免重复分析
+        self.last_analyzed_run_id = 0
 
         # 本次处理策略
         self.new_processing_strategy = 0
@@ -260,6 +262,7 @@ class ResultJudge:
                                 strategy=0,  # 测试通过策略为0
                                 round_id=self.round_id
                             )
+                            
                             print(f"数值插入成功，run_id: {self.run_id}，整车状态值：{vehicle_state}，耗时：{current_time - start_time:.2f}")
                             self.logger.info(f"数据插入成功，run_id: {self.run_id}")
                             return {"strategy": 0, "stop_signal": False, "in_data": in_data}
@@ -281,16 +284,13 @@ class ResultJudge:
             if err is not None:
                 return {"strategy": -1, "stop_signal": True, "in_data": in_data}
 
-            # 只有在本次策略等于0，非1/2时才进行十轮一监测
             if self.new_processing_strategy == 0:
-                # 监测是否第十次测试用例
-                if self.test_times >= 10:
-                    # 重置计次器
-                    self.test_times = 0
-                    # 初始化数据库查询单元
+                if self.run_id and self.run_id % 20 == 0 and self.run_id != self.last_analyzed_run_id:
+                    print(f"[DEBUG] 触发时间分析，当前 run_id: {self.run_id}")
+                    self.last_analyzed_run_id = self.run_id
                     db = TestResultHandler(self.logger, self.db_url, app=self.app)
-                    # 分析数据库近10次数据
                     strategy = db.analyze_durations(self.run_id)
+                    # print(f"分析结果：strategy={strategy}")
                     return {"strategy": strategy, "stop_signal": False, "in_data": in_data}
             if err is None:
                 self.stop_signal = False
