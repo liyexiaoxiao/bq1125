@@ -3,6 +3,7 @@ from .data_variation import DataVariation
 from .result_judge import ResultJudge
 from .bq_api import *
 from .database_handler import TestResultHandler
+from .replay_runner import ReplayService
 
 
 
@@ -29,6 +30,13 @@ class ProcessCtrl:
 
     # 主流程
     def run(self):
+        mode = getattr(self.config, "MODE", "").strip().upper()
+        replay_mode = getattr(self.config, "REPLAY_MODE", "REPLAY").strip().upper()
+        if mode == replay_mode:
+            self.logger.info("Process controller running in replay mode")
+            self._run_replay_mode()
+            return
+
         # TODO：获取mapping
         # api_get_map(self)
 
@@ -144,6 +152,53 @@ class ProcessCtrl:
 
         # 测试任务结束
         self.logger.info("测试结果判断模块---调用用例运行策略---停止")
+
+
+
+
+    def _run_replay_mode(self):
+        self.sing_stop = False
+        self.reset = False
+        replay_service = ReplayService(self.logger, self.config, self.app)
+        cases = replay_service.load_cases()
+        if not cases:
+            self.logger.warn("Replay mode did not yield any inputs to execute")
+            return
+
+        replay_config = replay_service.get_replay_config()
+        judge = ResultJudge(self.logger, config=replay_config, round_id=cases[0].round_id, app=self.app)
+
+        for case in cases:
+            if not self.reset:
+                if not api_reset(self):
+                    self.logger.error("Replay mode reset failed; aborting replay execution")
+                    return
+                self.reset = True
+
+            judge.round_id = case.round_id
+            case_payload = case.payload
+            case_type = case_payload.get("type")
+            if case_type == 2:
+                judge.test_times = 1
+            else:
+                judge.test_times = 0
+
+            result = judge.process_test_data(case_payload)
+
+            if 'status' in result:
+                self.logger.error(f"Replay mode failed for source run_id={case.run_id}: {result}")
+                continue
+
+            if ('stop_signal' in result) and result["stop_signal"]:
+                self.logger.warn("Replay mode received stop signal; stopping early")
+                self.sing_stop = True
+                break
+
+            self.logger.info(
+                f"Replay mode executed source run_id={case.run_id} with strategy {result.get('strategy')}"
+            )
+
+        self.logger.info("Replay mode execution completed")
 
 
 

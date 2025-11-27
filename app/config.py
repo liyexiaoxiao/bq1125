@@ -15,8 +15,9 @@ class Config:
     DATA_DIR = current_directory + "\\testdata\\"
     # 用例生成个数
     RUN_TIMES = 1000
-    # 模式：混合、全s、全w MIX/SLEEP/WAKE
+    # 模式：混合、全s、全w、重放 MIX/SLEEP/WAKE/REPLAY
     MODE = "MIX"
+    REPLAY_MODE = "REPLAY"
     # 文件夹名称
     DIR_NAME = "test001"
     # 测试平台URL
@@ -32,6 +33,10 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.path.join('app', 'db.db')
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'db.db')
     DATABASE = os.path.join('app', 'db.db')
+    REPLAY_SOURCE_DATABASE_URI = os.path.join('app', 'db.db')
+    REPLAY_DATABASE_URI = os.path.join('app', 'replay.db')
+    REPLAY_START_RUN_ID = None # None表示从头开始
+    REPLAY_END_RUN_ID = 21   # None表示一直到最后
     READ_INTERVAL = 100
     SIGNAL_TOLERANCE = 0.1
     # 变异策略模块参数

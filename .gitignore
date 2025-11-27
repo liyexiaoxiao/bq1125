@@ -150,3 +150,4 @@ dsl_gen/
 !/runtime/**
 !/Python38-build/**
 !*.pyd
+app/replay.db
