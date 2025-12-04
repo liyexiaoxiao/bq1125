@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzz Test System Control Panel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        .log-console {
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-lg transition-all duration-300" id="sidebar">
+        <div class="h-16 flex items-center justify-center border-b border-slate-700">
+            <h1 class="text-xl font-bold tracking-wider"><i class="fa-solid fa-car-burst mr-2"></i>FuzzTest</h1>
+        </div>
+
+        <nav class="flex-1 py-6 space-y-2 px-3">
+            <a href="#" onclick="showPage('dashboard')" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-600 text-white transition hover:bg-blue-700">
+                <i class="fa-solid fa-gauge-high w-5 text-center"></i>
+                <span>仪表盘</span>
+            </a>
+            <a href="#" onclick="showPage('analysis')" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-images w-5 text-center"></i>
+                <span>批次分析报告</span>
+            </a>
+            <a href="#" onclick="showPage('config')" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-sliders w-5 text-center"></i>
+                <span>系统配置</span>
+            </a>
+            <a href="#" onclick="showPage('logs')" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-terminal w-5 text-center"></i>
+                <span>运行日志</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 bg-gray-50">
+        
+        <!-- Top Header -->
+        <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
+            <div class="flex items-center text-gray-500">
+                <button id="menu-toggle" class="mr-4 hover:text-blue-600 lg:hidden">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h2 class="text-lg font-semibold text-gray-800" id="page-title">系统仪表盘</h2>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Status Indicator -->
+                <div class="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium border border-green-200" id="system-status">
+                    <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                    系统就绪
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-auto p-6" id="content-area">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="space-y-6 fade-in">
+                <!-- Control Bar -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center space-x-4 w-full md:w-auto">
+                            <button onclick="startTest()" id="btn-start" class="flex-1 md:flex-none flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-md hover:shadow-lg active:scale-95">
+                                <i class="fa-solid fa-play mr-2"></i> 开始测试
+                            </button>
+                            <button onclick="stopTest()" id="btn-stop" class="flex-1 md:flex-none flex items-center justify-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="fa-solid fa-stop mr-2"></i> 停止
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4 w-full md:w-auto justify-end">
+                            <button onclick="exportData()" class="flex items-center px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition shadow-sm">
+                                <i class="fa-solid fa-download mr-2 text-blue-600"></i> 导出测试数据 (DB & Logs)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Total Runs -->
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider">当前运行进度 (Current Run)</p>
+                                <h3 class="text-5xl font-bold text-gray-800 mt-4" id="stat-runs">0</h3>
+                            </div>
+                            <div class="p-4 bg-blue-50 text-blue-600 rounded-xl">
+                                <i class="fa-solid fa-rotate text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-6 w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%" id="progress-bar"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2" id="progress-text">目标: 1000 次</p>
+                    </div>
+
+                    <!-- Crashes Found -->
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider">发现异常 (Exceptions)</p>
+                                <h3 class="text-5xl font-bold text-red-600 mt-4">3</h3>
+                            </div>
+                            <div class="p-4 bg-red-50 text-red-600 rounded-xl">
+                                <i class="fa-solid fa-bug text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex space-x-2">
+                            <span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-md">Run #742: Signal Lost</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Logs Preview -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col min-h-[300px]">
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h3 class="font-semibold text-gray-800">实时系统日志</h3>
+                        <button onclick="showPage('logs')" class="text-blue-600 text-sm hover:underline font-medium">查看完整日志 <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+                    <div class="p-4 bg-slate-900 font-mono text-sm text-gray-300 overflow-y-auto log-console flex-1" style="max-height: 400px;" id="dashboard-log">
+                        <div class="py-1"><span class="text-green-400">[INFO]</span> System Ready. Loaded config.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: BATCH ANALYSIS -->
+            <div id="view-analysis" class="hidden space-y-6 fade-in">
+                <!-- Toolbar -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-4 w-full md:w-auto">
+                        <button onclick="document.getElementById('db-upload').click()" class="flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-sm font-medium hover:bg-indigo-100 transition">
+                            <i class="fa-solid fa-upload mr-2"></i> 导入历史数据库 (.db)
+                        </button>
+                        <input type="file" id="db-upload" class="hidden" accept=".db,.sqlite">
+
+                        <div class="h-8 w-px bg-gray-300 mx-2 hidden md:block"></div>
+
+                        <label class="font-medium text-gray-700 whitespace-nowrap">查看批次:</label>
+                        <select class="form-select block w-full md:w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 py-2 px-3 border bg-white">
+                            <option>Batch #8 (Current)</option>
+                            <option>Batch #7 (Imported)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex bg-gray-100 p-1 rounded-lg w-full md:w-auto">
+                        <button onclick="switchAnalysisTab('single')" id="tab-single" class="flex-1 md:flex-none px-6 py-1.5 rounded-md text-sm font-medium bg-white text-gray-800 shadow-sm transition">单信号趋势</button>
+                        <button onclick="switchAnalysisTab('compare')" id="tab-compare" class="flex-1 md:flex-none px-6 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700 transition">对比分析</button>
+                    </div>
+                </div>
+
+                <!-- Analysis Content Area -->
+                <div id="analysis-content" class="min-h-[500px]">
+                    <div id="subview-single" class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-in">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition hover:shadow-md">
+                            <h4 class="font-medium text-gray-700 mb-3 border-b pb-2">Batch 8 - EngineSpeed 极值分布</h4>
+                            <div class="bg-gray-100 rounded-lg h-64 flex items-center justify-center text-gray-400 flex-col">
+                                <i class="fa-regular fa-image text-4xl mb-2"></i>
+                                <span class="text-xs">图表占位符 (get100.py)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-compare" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 fade-in">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition hover:shadow-md border-l-4 border-l-blue-500">
+                            <h4 class="font-medium text-gray-700 mb-3 border-b pb-2 flex justify-between">
+                                <span>快充唤醒信号 vs 整车状态</span>
+                                <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">异常检测</span>
+                            </h4>
+                            <div class="bg-gray-50 rounded-lg h-72 flex items-center justify-center text-gray-400 flex-col border border-dashed border-gray-300">
+                                <i class="fa-solid fa-chart-area text-4xl mb-2 text-blue-300"></i>
+                                <span class="text-xs">图表占位符 (极值对比.py)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: CONFIG (UPDATED) -->
+            <div id="view-config" class="hidden max-w-5xl mx-auto fade-in">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-semibold text-gray-800 text-lg">System Configuration (config.py)</h3>
+                            <p class="text-sm text-gray-500">Parameters map directly to the backend configuration file.</p>
+                        </div>
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full border border-yellow-200">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Restart required on change
+                        </span>
+                    </div>
+                    
+                    <form class="p-6 space-y-8" onsubmit="event.preventDefault(); alert('配置已保存 (Mock)');">
+                        
+                        <!-- 1. Environment Config -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b pb-2 text-blue-600">
+                                <i class="fa-solid fa-server mr-2"></i>Environment Config
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">TEST_PALTFORM_URL</label>
+                                    <input type="url" value="https://krunapi.vtest.work:8020" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 font-mono text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">RUN_TIMES</label>
+                                    <input type="number" value="1000" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Strategy & Thresholds -->
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b pb-2 text-purple-600">
+                                <i class="fa-solid fa-code-branch mr-2"></i>Strategy & Thresholds
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">MODE</label>
+                                    <select id="config-mode" onchange="handleConfigModeChange()" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 font-medium bg-gray-50">
+                                        <option value="MIX" selected>MIX</option>
+                                        <option value="SLEEP">SLEEP</option>
+                                        <option value="WAKE">WAKE</option>
+                                        <option value="REPLAY">REPLAY</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">READ_INTERVAL</label>
+                                    <input type="number" value="100" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">SIGNAL_TOLERANCE</label>
+                                    <input type="number" step="0.01" value="0.1" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">SINGLE_VARIATION_TIME</label>
+                                    <input type="number" value="10" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">MULTIPLE_VARIATION_TIME</label>
+                                    <input type="number" value="10" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">REPEAT_VARIATION_TIME</label>
+                                    <input type="number" value="20" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Replay Config -->
+                        <div id="replay-settings-group" class="transition-all duration-300 rounded-lg p-4 border border-transparent">
+                            <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b pb-2 text-amber-600">
+                                <i class="fa-solid fa-clock-rotate-left mr-2"></i>Replay Configuration
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">REPLAY_START_RUN_ID</label>
+                                    <input type="number" placeholder="None" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">REPLAY_END_RUN_ID</label>
+                                    <input type="number" value="21" placeholder="None" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                                </div>
+                            </div>
+
+                            <!-- Dynamic File Upload for Replay Mode -->
+                            <div id="replay-file-upload" class="hidden mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg animate-pulse-once">
+                                <label class="block text-sm font-medium text-amber-900 mb-2">
+                                    <i class="fa-solid fa-database mr-2"></i>Upload Source DB (REPLAY_SOURCE_DATABASE_URI)
+                                </label>
+                                <div class="flex items-center space-x-4">
+                                    <input type="file" accept=".db,.sqlite" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t border-gray-200">
+                            <button type="submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg transition transform active:scale-95">
+                                <i class="fa-solid fa-floppy-disk mr-2"></i> Save & Apply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- VIEW: LOGS -->
+            <div id="view-logs" class="hidden h-full flex flex-col fade-in">
+                <div class="bg-gray-900 rounded-xl shadow-lg border border-gray-700 flex-1 flex flex-col overflow-hidden">
+                    <div class="px-4 py-3 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+                        <span class="text-gray-300 font-mono text-sm">log_name.log</span>
+                        <div class="flex space-x-2">
+                            <button class="text-xs text-gray-400 hover:text-white border border-gray-600 px-2 py-1 rounded" onclick="document.getElementById('full-log-container').innerHTML=''">Clear</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 p-4 overflow-y-auto log-console text-sm space-y-1" id="full-log-container">
+                        <div class="text-gray-400">Loading logs...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Page Navigation ---
+        function showPage(pageId) {
+            const titles = {
+                'dashboard': '系统仪表盘',
+                'analysis': '批次分析报告',
+                'config': '系统配置',
+                'logs': '详细运行日志'
+            };
+            document.getElementById('page-title').innerText = titles[pageId];
+
+            ['dashboard', 'analysis', 'config', 'logs'].forEach(id => {
+                document.getElementById('view-' + id).classList.add('hidden');
+            });
+            document.getElementById('view-' + pageId).classList.remove('hidden');
+            
+            // Sidebar active state
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.className = 'nav-item flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition';
+                if (item.getAttribute('onclick').includes(pageId)) {
+                    item.className = 'nav-item flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-600 text-white transition hover:bg-blue-700';
+                }
+            });
+
+            // If entering config page, trigger mode check
+            if (pageId === 'config') handleConfigModeChange();
+        }
+
+        // --- Analysis Tab Logic ---
+        function switchAnalysisTab(tab) {
+            const btnSingle = document.getElementById('tab-single');
+            const btnCompare = document.getElementById('tab-compare');
+            const viewSingle = document.getElementById('subview-single');
+            const viewCompare = document.getElementById('subview-compare');
+
+            if (tab === 'single') {
+                btnSingle.className = "flex-1 md:flex-none px-6 py-1.5 rounded-md text-sm font-medium bg-white text-gray-800 shadow-sm transition";
+                btnCompare.className = "flex-1 md:flex-none px-6 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700 transition";
+                viewSingle.classList.remove('hidden');
+                viewCompare.classList.add('hidden');
+            } else {
+                btnSingle.className = "flex-1 md:flex-none px-6 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700 transition";
+                btnCompare.className = "flex-1 md:flex-none px-6 py-1.5 rounded-md text-sm font-medium bg-white text-gray-800 shadow-sm transition";
+                viewSingle.classList.add('hidden');
+                viewCompare.classList.remove('hidden');
+            }
+        }
+
+        // --- Config Mode Logic ---
+        function handleConfigModeChange() {
+            const mode = document.getElementById('config-mode').value;
+            const uploadArea = document.getElementById('replay-file-upload');
+            const replayGroup = document.getElementById('replay-settings-group');
+
+            if (mode === 'REPLAY') {
+                uploadArea.classList.remove('hidden');
+                replayGroup.classList.add('bg-amber-50', 'border-amber-200');
+            } else {
+                uploadArea.classList.add('hidden');
+                replayGroup.classList.remove('bg-amber-50', 'border-amber-200');
+            }
+        }
+
+        // --- Mock Dashboard Logic ---
+        let testInterval;
+        let runs = 0;
+        const totalRuns = 1000;
+
+        function startTest() {
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-start').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('btn-stop').disabled = false;
+            document.getElementById('btn-stop').classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            const statusDiv = document.getElementById('system-status');
+            statusDiv.className = "flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200";
+            statusDiv.innerHTML = '<span class="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-ping"></span> 测试运行中...';
+            
+            addLog("INFO", "ProcessControl: State changed to RUNNING");
+            
+            testInterval = setInterval(() => {
+                if(runs >= totalRuns) {
+                    stopTest();
+                    addLog("INFO", "Test Completed. Target runs reached.");
+                    return;
+                }
+                runs += 5; // speed up simulation
+                document.getElementById('stat-runs').innerText = runs;
+                
+                let progress = (runs / totalRuns) * 100;
+                document.getElementById('progress-bar').style.width = progress + "%";
+                
+                if(runs % 100 === 0) {
+                     addLog("INFO", `Batch Completed. Saving images to /report/${Math.floor(runs/100)}...`);
+                }
+            }, 100);
+        }
+
+        function stopTest() {
+            clearInterval(testInterval);
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-start').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('btn-stop').classList.add('opacity-50', 'cursor-not-allowed');
+
+            const statusDiv = document.getElementById('system-status');
+            statusDiv.className = "flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium border border-red-200";
+            statusDiv.innerHTML = '<i class="fa-solid fa-stop mr-2"></i> 已停止';
+            addLog("WARN", "ProcessControl: User initiated STOP.");
+        }
+
+        function exportData() {
+            addLog("SYS", "Packing database and logs for download...");
+            alert("正在下载: test001_results.zip (包含 db.db, replay.db, operation.log)");
+        }
+
+        function addLog(level, message) {
+            const container = document.getElementById('dashboard-log');
+            const colors = { 'INFO': 'text-green-400', 'WARN': 'text-yellow-400', 'ERROR': 'text-red-500', 'SYS': 'text-purple-400' };
+            const time = new Date().toLocaleTimeString();
+            const html = `<div class="py-1"><span class="${colors[level] || 'text-white'}">[${level}]</span> ${time} - ${message}</div>`;
+            container.innerHTML = html + container.innerHTML; 
+            
+            const fullContainer = document.getElementById('full-log-container');
+            const fullHtml = `<div class="font-mono border-b border-gray-800 py-1"><span class="text-gray-500 mr-2">${time}</span><span class="${colors[level]} font-bold w-16 inline-block">${level}</span> <span class="text-gray-300">${message}</span></div>`;
+            fullContainer.innerHTML += fullHtml;
+            fullContainer.scrollTop = fullContainer.scrollHeight;
+        }
+
+        // Init
+        window.addEventListener('load', () => {
+            // Check initial mode state
+            // setTimeout(() => addLog("INFO", "Backend Connected. Config loaded."), 500);
+        });
+
+    </script>
+</body>
+</html>
