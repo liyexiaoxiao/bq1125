@@ -91,17 +91,62 @@
                 <button id="menu-toggle" class="mr-4 hover:text-blue-600 lg:hidden">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                <h2 class="text-lg font-semibold text-gray-800" id="page-title">系统仪表盘</h2>
+                <div class="flex items-center space-x-3">
+                    <span class="text-xl font-bold text-gray-900">北汽模糊测试系统</span>
+                    <span class="text-sm text-gray-400">|</span>
+                    <h2 class="text-lg font-semibold text-gray-800" id="page-title">仪表盘</h2>
+                </div>
             </div>
-            
             <div class="flex items-center space-x-4">
-                <!-- Status Indicator -->
                 <div class="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium border border-green-200" id="system-status">
                     <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
                     系统就绪
                 </div>
+                <div class="flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium border border-gray-200">
+                    <i class="fa-solid fa-user mr-2"></i>
+                    <span id="header-user">北汽工程师</span>
+                    <span class="mx-2 text-gray-400">/</span>
+                    <span id="header-role">13579</span>
+                </div>
+                <button id="help-btn" class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">帮助</button>
             </div>
         </header>
+
+        <div id="help-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-xl shadow-xl w-11/12 max-w-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">帮助</h3>
+                    <button id="help-close" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="text-sm text-gray-600 space-y-2">
+                    <p>顶部显示系统名称与当前用户/角色信息。</p>
+                    <p>点击“帮助”按钮可打开此窗口。</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        ;(() => {
+          const userEl = document.getElementById('header-user')
+          const roleEl = document.getElementById('header-role')
+          const userName = (localStorage.getItem('userName') || '').trim()
+          const rolesRaw = localStorage.getItem('roles') || ''
+          let roles = rolesRaw
+          try { const parsed = JSON.parse(rolesRaw); if (Array.isArray(parsed)) roles = parsed.join(',') } catch(e) {}
+          if (userName) userEl.textContent = userName
+          if (roles) roleEl.textContent = roles
+          const helpBtn = document.getElementById('help-btn')
+          const helpModal = document.getElementById('help-modal')
+          const helpClose = document.getElementById('help-close')
+          const open = () => helpModal.classList.remove('hidden')
+          const close = () => helpModal.classList.add('hidden')
+          if (helpBtn) helpBtn.addEventListener('click', open)
+          if (helpClose) helpClose.addEventListener('click', close)
+          helpModal.addEventListener('click', (e) => { if (e.target === helpModal) close() })
+        })()
+        </script>
 
         <!-- Content Area -->
         <div class="flex-1 overflow-auto p-6" id="content-area">
