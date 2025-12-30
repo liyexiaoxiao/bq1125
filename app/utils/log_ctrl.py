@@ -36,21 +36,21 @@ class Logger:
         self.logger.setLevel(logging.DEBUG)
 
         # 配置主日志处理器（RotatingFileHandler，限制文件大小）
-        all_handler = RotatingFileHandler(self.all_log_file, maxBytes=max_bytes, backupCount=backup_count)
+        all_handler = RotatingFileHandler(self.all_log_file, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8')
         all_handler.setFormatter(formatter)
         self.logger.addHandler(all_handler)
 
         # 配置错误日志记录器
         self.error_logger = logging.getLogger("error_logger")
         self.error_logger.setLevel(logging.ERROR)
-        error_handler = RotatingFileHandler(self.error_log_file, maxBytes=max_bytes, backupCount=backup_count)
+        error_handler = RotatingFileHandler(self.error_log_file, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8')
         error_handler.setFormatter(formatter)
         self.error_logger.addHandler(error_handler)
 
         # 配置警告日志记录器
         self.warn_logger = logging.getLogger("warn_logger")
         self.warn_logger.setLevel(logging.WARNING)
-        warn_handler = RotatingFileHandler(self.warn_log_file, maxBytes=max_bytes, backupCount=backup_count)
+        warn_handler = RotatingFileHandler(self.warn_log_file, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8')
         warn_handler.setFormatter(formatter)
         self.warn_logger.addHandler(warn_handler)
 

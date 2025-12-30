@@ -18,23 +18,8 @@ logger.info('Server started')
 
 
 def main():
-    conf = Config()
-    # 运行进程控制模块
-    pro = ProcessCtrl(logger, conf, app)
-    thread = threading.Thread(target=pro.run)
-    thread.start()  # 启动线程
-    thread.join()
-
     app.run(debug=True)
 
 
 if __name__ == '__main__':
-    conf = Config()
-    # 运行进程控制模块
-    pro = ProcessCtrl(logger, conf, app)
-    pro.run()
-    # thread = threading.Thread(target=pro.run)
-    # thread.start()  # 启动线程
-    # thread.join()
-
-    # app.run(debug=True)
+    app.run(debug=True)

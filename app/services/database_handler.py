@@ -453,7 +453,7 @@ class TestResultHandler:
         """
         conn = None
         try:
-            self.logger.info("正在查询最新记录的round_id...")
+            self.logger.debug("正在查询最新记录的round_id...")
 
             conn = self.get_db_connection()
             conn.row_factory = sqlite3.Row  # 支持按列名访问
@@ -467,11 +467,11 @@ class TestResultHandler:
             row = cursor.fetchone()
 
             if row is None:
-                self.logger.info("数据库中没有 test_runs 记录")
+                self.logger.debug("数据库中没有 test_runs 记录")
                 return None
 
             round_id = row['round_id']
-            self.logger.info(f"成功获取最新记录的round_id: {round_id}")
+            self.logger.debug(f"成功获取最新记录的round_id: {round_id}")
             return round_id
 
         except Exception as e:

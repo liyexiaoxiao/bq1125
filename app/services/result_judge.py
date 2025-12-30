@@ -210,15 +210,18 @@ class ResultJudge:
             end_time = start_time + est_time
             last_read_time = start_time - self.read_interval  # 确保第一次循环就读取
 
-            # 确定当前是唤醒轮(单数)还是休眠轮(双数)
-            # 休眠轮：整车状态=30
-            # 唤醒轮：整车状态=170
-            is_wakeup_round = self.test_times % 2
-            if is_wakeup_round == 1:
-                target_state = 170
+            # 使用预期结果中的整车状态作为目标值，如果不存在则按轮次设置默认目标
+            target_state = None
+            for item in self.expected_results:
+                if item.get("name") == "整车State状态":
+                    target_state = item.get("value")
+                    break
+            if target_state is None:
+                is_wakeup_round = self.test_times % 2
+                target_state = 170 if is_wakeup_round == 1 else 30
+                self.logger.info(f"未在预期结果中找到目标整车状态，按轮次使用默认值: {target_state}")
             else:
-                target_state = 30
-            self.logger.info(f"当前是{'唤醒轮' if is_wakeup_round else '休眠轮'}，目标整车状态值: {target_state}")
+                self.logger.info(f"目标整车状态值来自预期结果: {target_state}")
 
             # 在预期时间内循环读取信号
             while time.time() < end_time:
@@ -378,8 +381,7 @@ class ResultJudge:
         # 将结果转换为测试结果格式 {'挡位信号': 1, '整车State状态': 49, '蓄电池剩余电量SOC': 0.0}
         for dspace_signal, value in result_data.items():
             # 获取原始信号名称
-            # original_signal = self.reverse_mapping.get(dspace_signal)
-            original_signal = dspace_signal
+            original_signal = self.reverse_mapping.get(dspace_signal, dspace_signal)
 
             # if not original_signal:
             #     self.logger.warn(f"未找到信号 {dspace_signal} 的原始名称")
