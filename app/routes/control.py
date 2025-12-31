@@ -31,9 +31,25 @@ class AppConfigProxy:
 
 @base.route("/", methods=["GET"])
 def serve_frontend():
+    """服务前端页面
+    优先返回Vite构建后的index.html，如果不存在则返回原始的frontend.html
+    """
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    # 优先检查Vite构建产物
+    vite_dist = os.path.join(root, "frontend", "dist", "index.html")
+    if os.path.exists(vite_dist):
+        return send_from_directory(os.path.join(root, "frontend", "dist"), "index.html")
+    # 兜底：返回原始HTML
     path = os.path.join(root, "frontend", "frontend.html")
     return send_file(path)
+
+
+@base.route("/assets/<path:filename>", methods=["GET"])
+def serve_assets(filename):
+    """服务Vite构建的静态资源"""
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    assets_dir = os.path.join(root, "frontend", "dist", "assets")
+    return send_from_directory(assets_dir, filename)
 
 def _run_controller(app_obj):
     global _controller
@@ -170,3 +186,252 @@ def export_assets():
                 pass
     mem.seek(0)
     return send_file(mem, as_attachment=True, download_name="test_results.zip", mimetype="application/zip")
+
+
+@base.route("/config", methods=["GET"])
+def get_config():
+    """获取当前配置"""
+    config_data = {
+        "testPlatformUrl": getattr(DefaultConfig, "TEST_PALTFORM_URL", ""),
+        "runTimes": getattr(DefaultConfig, "RUN_TIMES", 1000),
+        "mode": getattr(DefaultConfig, "MODE", "MIX"),
+        "readInterval": getattr(DefaultConfig, "READ_INTERVAL", 100),
+        "signalTolerance": getattr(DefaultConfig, "SIGNAL_TOLERANCE", 0.1),
+        "singleVariationTime": getattr(DefaultConfig, "SINGLE_VARIATION_TIME", 10),
+        "multipleVariationTime": getattr(DefaultConfig, "MULTIPLE_VARIATION_TIME", 10),
+        "repeatVariationTime": getattr(DefaultConfig, "REPEAT_VARIATION_TIME", 20),
+        "replayStartRunId": getattr(DefaultConfig, "REPLAY_START_RUN_ID", None),
+        "replayEndRunId": getattr(DefaultConfig, "REPLAY_END_RUN_ID", None),
+    }
+    return jsonify(config_data)
+
+
+@base.route("/config", methods=["POST"])
+def save_config():
+    """保存配置（运行时更新）"""
+    data = request.get_json()
+    if not data:
+        return jsonify({"ok": 0, "message": "No data provided"}), 400
+    
+    # 映射前端字段到配置字段
+    field_mapping = {
+        "testPlatformUrl": "TEST_PALTFORM_URL",
+        "runTimes": "RUN_TIMES",
+        "mode": "MODE",
+        "readInterval": "READ_INTERVAL",
+        "signalTolerance": "SIGNAL_TOLERANCE",
+        "singleVariationTime": "SINGLE_VARIATION_TIME",
+        "multipleVariationTime": "MULTIPLE_VARIATION_TIME",
+        "repeatVariationTime": "REPEAT_VARIATION_TIME",
+        "replayStartRunId": "REPLAY_START_RUN_ID",
+        "replayEndRunId": "REPLAY_END_RUN_ID",
+    }
+    
+    for frontend_key, config_key in field_mapping.items():
+        if frontend_key in data:
+            setattr(DefaultConfig, config_key, data[frontend_key])
+            current_app.config[config_key] = data[frontend_key]
+    
+    return jsonify({"ok": 1, "message": "Config updated"})
+
+
+@base.route("/charts/data", methods=["GET"])
+def get_charts_data():
+    """获取图表数据，从数据库读取 test_runs 表，包含 JSON 字段用于信号对比"""
+    global _temp_db_path
+    round_id = request.args.get("round_id", None)
+    start_idx = request.args.get("start", 1, type=int)
+    end_idx = request.args.get("end", 100, type=int)
+    
+    # 优先使用上传的数据库
+    if _temp_db_path and os.path.exists(_temp_db_path):
+        db_url = _temp_db_path
+    else:
+        db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI", os.path.join("app", "db.db"))
+    
+    conn = None
+    try:
+        import sqlite3
+        import json as json_module
+        conn = sqlite3.connect(db_url)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        
+        # 获取所有轮次
+        cur.execute("SELECT DISTINCT round_id FROM test_runs ORDER BY round_id")
+        rounds = [row[0] for row in cur.fetchall()]
+        
+        # 计算 LIMIT 和 OFFSET
+        limit = end_idx - start_idx + 1
+        offset = start_idx - 1
+        
+        # 获取测试记录（包含 JSON 字段）
+        if round_id:
+            cur.execute("""
+                SELECT run_id, round_id, type, status, strategy, expected_duration, actual_duration,
+                       actual_input, expected_output, actual_output
+                FROM test_runs 
+                WHERE round_id = ? 
+                ORDER BY run_id ASC 
+                LIMIT ? OFFSET ?
+            """, (round_id, limit, offset))
+        else:
+            cur.execute("""
+                SELECT run_id, round_id, type, status, strategy, expected_duration, actual_duration,
+                       actual_input, expected_output, actual_output
+                FROM test_runs 
+                ORDER BY run_id ASC 
+                LIMIT ? OFFSET ?
+            """, (limit, offset))
+        
+        rows = cur.fetchall()
+        records = []
+        for row in rows:
+            # 解析 JSON 字段
+            actual_input = None
+            expected_output = None
+            actual_output = None
+            
+            try:
+                if row[7]:
+                    actual_input = json_module.loads(row[7]) if isinstance(row[7], str) else row[7]
+            except:
+                pass
+            try:
+                if row[8]:
+                    expected_output = json_module.loads(row[8]) if isinstance(row[8], str) else row[8]
+            except:
+                pass
+            try:
+                if row[9]:
+                    actual_output = json_module.loads(row[9]) if isinstance(row[9], str) else row[9]
+            except:
+                pass
+            
+            records.append({
+                "run_id": row[0],
+                "round_id": row[1],
+                "type": row[2],
+                "status": row[3],
+                "strategy": row[4],
+                "expected_duration": row[5],
+                "actual_duration": row[6],
+                "actual_input": actual_input,
+                "expected_output": expected_output,
+                "actual_output": actual_output
+            })
+        
+        # 统计信息
+        if round_id:
+            cur.execute("SELECT COUNT(*) FROM test_runs WHERE round_id = ?", (round_id,))
+        else:
+            cur.execute("SELECT COUNT(*) FROM test_runs")
+        total = cur.fetchone()[0]
+        
+        if round_id:
+            cur.execute("SELECT COUNT(*) FROM test_runs WHERE round_id = ? AND status = 1", (round_id,))
+        else:
+            cur.execute("SELECT COUNT(*) FROM test_runs WHERE status = 1")
+        normal = cur.fetchone()[0]
+        
+        if round_id:
+            cur.execute("SELECT COUNT(*) FROM test_runs WHERE round_id = ? AND (status != 1 OR strategy < 0)", (round_id,))
+        else:
+            cur.execute("SELECT COUNT(*) FROM test_runs WHERE status != 1 OR strategy < 0")
+        error = cur.fetchone()[0]
+        
+        if round_id:
+            cur.execute("SELECT AVG(actual_duration) FROM test_runs WHERE round_id = ?", (round_id,))
+        else:
+            cur.execute("SELECT AVG(actual_duration) FROM test_runs")
+        avg_row = cur.fetchone()
+        avg_duration = round(avg_row[0], 2) if avg_row[0] else 0
+        
+        # 状态分布统计
+        status_counts = {}
+        for s in [1, 2, 3, 4]:
+            if round_id:
+                cur.execute("SELECT COUNT(*) FROM test_runs WHERE round_id = ? AND status = ?", (round_id, s))
+            else:
+                cur.execute("SELECT COUNT(*) FROM test_runs WHERE status = ?", (s,))
+            status_counts[s] = cur.fetchone()[0]
+        
+        return jsonify({
+            "rounds": rounds,
+            "records": records,
+            "stats": {
+                "total": total,
+                "normal": normal,
+                "error": error,
+                "avgDuration": avg_duration
+            },
+            "statusCounts": status_counts
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "rounds": [],
+            "records": [],
+            "stats": {"total": 0, "normal": 0, "error": 0, "avgDuration": 0},
+            "statusCounts": {1: 0, 2: 0, 3: 0, 4: 0},
+            "error": str(e)
+        })
+    finally:
+        if conn:
+            conn.close()
+
+
+# 用于存储当前使用的临时数据库路径
+_temp_db_path = None
+
+@base.route("/charts/upload-db", methods=["POST"])
+def upload_charts_db():
+    """上传数据库文件用于图表展示"""
+    global _temp_db_path
+    
+    if 'db_file' not in request.files:
+        return jsonify({"ok": 0, "message": "No file provided"}), 400
+    
+    file = request.files['db_file']
+    if file.filename == '':
+        return jsonify({"ok": 0, "message": "No file selected"}), 400
+    
+    # 保存到临时目录
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    temp_dir = os.path.join(root, "temp")
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    # 使用时间戳避免冲突
+    import time as time_module
+    filename = f"uploaded_{int(time_module.time())}_{file.filename}"
+    temp_path = os.path.join(temp_dir, filename)
+    file.save(temp_path)
+    
+    # 验证是否是有效的 SQLite 数据库
+    try:
+        import sqlite3
+        conn = sqlite3.connect(temp_path)
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='test_runs'")
+        if not cur.fetchone():
+            conn.close()
+            os.remove(temp_path)
+            return jsonify({"ok": 0, "message": "Database does not contain test_runs table"}), 400
+        conn.close()
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return jsonify({"ok": 0, "message": f"Invalid database file: {str(e)}"}), 400
+    
+    # 保存临时数据库路径
+    _temp_db_path = temp_path
+    
+    return jsonify({"ok": 1, "message": "Database uploaded successfully", "filename": filename})
+
+
+def get_charts_db_path():
+    """获取用于图表的数据库路径，优先使用上传的数据库"""
+    global _temp_db_path
+    if _temp_db_path and os.path.exists(_temp_db_path):
+        return _temp_db_path
+    return current_app.config.get("SQLALCHEMY_DATABASE_URI", os.path.join("app", "db.db"))

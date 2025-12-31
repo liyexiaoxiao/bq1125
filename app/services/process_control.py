@@ -114,7 +114,7 @@ class ProcessCtrl:
 
             # 二、测试结果判断模块---创建结果判断模块实例
             judge = ResultJudge(self.logger, config=self.config, round_id=current_round_id, app=self.app)
-            while True:
+            while not self.sing_stop:
                 # 测试平台接口交互模块发，送复位消息，成功继续运行，失败继续下一个用例
                 if self.reset==False:
                     bak = api_reset(self)
@@ -169,6 +169,11 @@ class ProcessCtrl:
         judge = ResultJudge(self.logger, config=replay_config, round_id=cases[0].round_id, app=self.app)
 
         for case in cases:
+            # 检查停止信号
+            if self.sing_stop:
+                self.logger.warn("Replay mode received external stop signal; stopping")
+                break
+                
             if not self.reset:
                 if not api_reset(self):
                     self.logger.error("Replay mode reset failed; aborting replay execution")
