@@ -191,6 +191,11 @@ def export_assets():
 @base.route("/config", methods=["GET"])
 def get_config():
     """获取当前配置"""
+    # 从 DATABASE 配置中提取数据库名称
+    database_path = getattr(DefaultConfig, "DATABASE", "app/db.db")
+    # 提取文件名，去掉路径和后缀
+    database_name = database_path.replace('app/', '').replace('app\\', '').replace('.db', '')
+    
     config_data = {
         "testPlatformUrl": getattr(DefaultConfig, "TEST_PALTFORM_URL", ""),
         "runTimes": getattr(DefaultConfig, "RUN_TIMES", 1000),
@@ -202,6 +207,7 @@ def get_config():
         "repeatVariationTime": getattr(DefaultConfig, "REPEAT_VARIATION_TIME", 20),
         "replayStartRunId": getattr(DefaultConfig, "REPLAY_START_RUN_ID", None),
         "replayEndRunId": getattr(DefaultConfig, "REPLAY_END_RUN_ID", None),
+        "databaseName": database_name,
     }
     return jsonify(config_data)
 
@@ -231,6 +237,19 @@ def save_config():
         if frontend_key in data:
             setattr(DefaultConfig, config_key, data[frontend_key])
             current_app.config[config_key] = data[frontend_key]
+    
+    # 特殊处理数据库名称，构建完整路径
+    if "databaseName" in data:
+        db_name = data["databaseName"]
+        db_path = os.path.join('app', f'{db_name}.db')
+        
+        # 更新所有相关的数据库配置
+        setattr(DefaultConfig, "DATABASE", db_path)
+        setattr(DefaultConfig, "SQLALCHEMY_DATABASE_URI", db_path)
+        setattr(DefaultConfig, "REPLAY_SOURCE_DATABASE_URI", db_path)
+        current_app.config["DATABASE"] = db_path
+        current_app.config["SQLALCHEMY_DATABASE_URI"] = db_path
+        current_app.config["REPLAY_SOURCE_DATABASE_URI"] = db_path
     
     return jsonify({"ok": 1, "message": "Config updated"})
 

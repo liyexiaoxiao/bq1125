@@ -38,7 +38,33 @@
           </div>
         </div>
 
-        <!-- 2. Strategy & Thresholds -->
+        <!-- 2. Database Config -->
+        <div>
+          <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b pb-2 text-green-600">
+            <i class="fa-solid fa-database mr-2"></i>Database Configuration
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1 font-mono">DATABASE_NAME</label>
+              <div class="text-xs text-gray-500 mb-1">数据库名称（仅输入名称，不含后缀）</div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500 font-mono">app/</span>
+                <input 
+                  v-model="config.databaseName"
+                  type="text" 
+                  placeholder="db"
+                  class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 font-mono text-sm"
+                >
+                <span class="text-sm text-gray-500 font-mono">.db</span>
+              </div>
+              <div class="mt-2 text-xs text-blue-600 font-mono bg-blue-50 p-2 rounded">
+                完整路径: app/{{ config.databaseName || 'db' }}.db
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Strategy & Thresholds -->
         <div>
           <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b pb-2 text-purple-600">
             <i class="fa-solid fa-code-branch mr-2"></i>Strategy & Thresholds
@@ -100,7 +126,7 @@
           </div>
         </div>
 
-        <!-- 3. Replay Config -->
+        <!-- 4. Replay Config -->
         <div 
           class="transition-all duration-300 rounded-lg p-4 border"
           :class="isReplayMode ? 'bg-amber-50 border-amber-200' : 'border-transparent'"
@@ -180,7 +206,8 @@ const config = ref({
   multipleVariationTime: 10,
   repeatVariationTime: 20,
   replayStartRunId: null,
-  replayEndRunId: 21
+  replayEndRunId: 21,
+  databaseName: 'db'
 })
 
 const isReplayMode = computed(() => config.value.mode === 'REPLAY')
