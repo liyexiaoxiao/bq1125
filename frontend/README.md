@@ -25,9 +25,9 @@ frontend/
 │   │   └── HelpModal.vue   # 帮助模态框
 │   └── views/
 │       ├── Dashboard.vue   # 仪表盘页面
-│       ├── Analysis.vue    # 批次分析报告页面
+│       ├── Charts.vue      # 数据图表页面
 │       ├── Config.vue      # 系统配置页面
-│       └── Logs.vue        # 运行日志页面
+│       └── Logs.vue        # 详细运行日志页面
 └── public/
     └── vite.svg            # 静态资源
 ```
@@ -89,6 +89,8 @@ python start.py
 | `/export` | GET | 导出测试数据 |
 | `/config` | GET | 获取配置 |
 | `/config` | POST | 保存配置 |
+| `/charts/data` | GET | 获取图表数据 |
+| `/charts/upload-db` | POST | 上传数据库文件 |
 
 ## 技术栈
 
