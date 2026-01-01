@@ -5,7 +5,7 @@ services:
     # build: .  <-- Comment this out
     image: bq1125_backend  # <-- Use the manually built image name
     ports:
-      - "5000:5000"
+      - "5050:5000"
     volumes:
       - db_data:/data
       - ./logs:/app/logs
@@ -19,7 +19,7 @@ services:
     # build: ./frontend  <-- Comment this out
     image: bq1125_frontend # <-- Use the manually built image name
     ports:
-      - "8080:80"
+      - "8880:80"
     depends_on:
       - backend
     restart: always
