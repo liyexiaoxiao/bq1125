@@ -10,7 +10,7 @@ from app.services.process_control import ProcessCtrl
 logger = setup_logger()
 
 # app = create_app(os.getenv('FLASK_CONFIG') or 'default')
-app = create_app("development")
+app = create_app(os.getenv('FLASK_CONFIG') or "development")
 
 logger.info('Server started')
 
@@ -22,4 +22,4 @@ def main():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

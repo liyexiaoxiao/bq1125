@@ -41,7 +41,13 @@ class ProcessCtrl:
         # api_get_map(self)
 
         # 初始测试结果判断模块实例前，先生成当前轮次的id：round_id
-        db_handler = TestResultHandler(self.logger, db_url=self.config.SQLALCHEMY_DATABASE_URI, app=self.app)
+        db_url = getattr(self.config, "DATABASE", None)
+        if not db_url:
+             db_url = self.config.SQLALCHEMY_DATABASE_URI
+             if db_url and db_url.startswith("sqlite:///"):
+                 db_url = db_url.replace("sqlite:///", "")
+
+        db_handler = TestResultHandler(self.logger, db_url=db_url, app=self.app)
         previous_round_id = db_handler.get_latest_round_id()  # 获取最新轮次id
         # 处理没有记录或发生异常的情况
         if previous_round_id is None:

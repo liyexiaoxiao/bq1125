@@ -1,48 +1,26 @@
-version: '3.8'
+version: '3'
 
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: bq1125-flask-app
+  backend:
+    build: .
     ports:
       - "5000:5000"
     volumes:
-      # Mount testdata directory for test data persistence
-      - ./testdata:/app/testdata
-      # Mount logs directory for log persistence
+      - db_data:/data
       - ./logs:/app/logs
-      # Mount app database for persistence
-      - ./app/db.db:/app/app/db.db
     environment:
-      - FLASK_ENV=production
-      - FLASK_APP=start.py
-    restart: unless-stopped
-    networks:
-      - bq-network
+      - DATABASE_FILE_PATH=/data/db.db
+      - REPLAY_DATABASE_URI=/data/replay.db
+      - FLASK_CONFIG=production
+    restart: always
 
-  # Development service with hot reload
-  web-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: bq1125-flask-dev
+  frontend:
+    build: ./frontend
     ports:
-      - "5000:5000"
-    volumes:
-      # Mount entire project for development
-      - .:/app
-    environment:
-      - FLASK_ENV=development
-      - FLASK_APP=start.py
-      - FLASK_DEBUG=1
-    restart: unless-stopped
-    networks:
-      - bq-network
-    profiles:
-      - dev
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: always
 
-networks:
-  bq-network:
-    driver: bridge
+volumes:
+  db_data:

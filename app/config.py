@@ -30,11 +30,23 @@ class Config:
     # 数据库对接地址
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI') or \
     #                           'mysql+mysqlconnector://root:admin123@localhost:3306/test?charset=utf8'  # 在开发环境中连接本地mysql数据库
-    SQLALCHEMY_DATABASE_URI = os.path.join('app', 'db.db')
+    
+    _db_path = os.environ.get('DATABASE_FILE_PATH') or os.path.join('app', 'db.db')
+    DATABASE = _db_path
+    
+    if os.environ.get('SQLALCHEMY_DATABASE_URI'):
+        SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    else:
+        if _db_path.startswith("/"):
+             SQLALCHEMY_DATABASE_URI = 'sqlite:///' + _db_path
+        else:
+             SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.abspath(_db_path)
+
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'db.db')
-    DATABASE = os.path.join('app', 'db.db')
-    REPLAY_SOURCE_DATABASE_URI = os.path.join('app', 'db.db')
-    REPLAY_DATABASE_URI = os.path.join('app', 'replay.db')
+    # DATABASE = os.path.join('app', 'db.db')
+    
+    REPLAY_SOURCE_DATABASE_URI = os.environ.get('REPLAY_SOURCE_DATABASE_URI') or _db_path
+    REPLAY_DATABASE_URI = os.environ.get('REPLAY_DATABASE_URI') or os.path.join('app', 'replay.db')
     REPLAY_START_RUN_ID = None # None表示从头开始
     REPLAY_END_RUN_ID = 21   # None表示一直到最后
     READ_INTERVAL = 100

@@ -23,6 +23,20 @@ class Config:
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI') or \
     #                           'mysql+mysqlconnector://root:admin123@localhost:3306/test?charset=utf8'  # 在开发环境中连接本地mysql数据库
 
+    _db_path = os.environ.get('DATABASE_FILE_PATH') or os.path.join(basedir, 'app', 'db.db')
+    DATABASE = _db_path
+    
+    if os.environ.get('SQLALCHEMY_DATABASE_URI'):
+        SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    else:
+        if _db_path.startswith("/") or _db_path[1] == ':':
+             SQLALCHEMY_DATABASE_URI = 'sqlite:///' + _db_path
+        else:
+             SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.abspath(_db_path)
+
+    REPLAY_SOURCE_DATABASE_URI = os.environ.get('REPLAY_SOURCE_DATABASE_URI') or _db_path
+    REPLAY_DATABASE_URI = os.environ.get('REPLAY_DATABASE_URI') or os.path.join(basedir, 'app', 'replay.db')
+
     # SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
     # SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     # FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
@@ -54,14 +68,15 @@ class TestingConfig(Config):
     #                           'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
 
 
-# class ProductionConfig(Config):
-#     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
-#                               'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+class ProductionConfig(Config):
+    pass
+    # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
+    #                           'sqlite:///' + os.path.join(basedir, 'data.sqlite')
 
 
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
-    # 'production': ProductionConfig,
+    'production': ProductionConfig,
     'default': DevelopmentConfig
 }

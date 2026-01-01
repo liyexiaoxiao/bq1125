@@ -98,7 +98,7 @@ def create_app(config_name):
     if config_name is None:
         config_name = "development"
     if config_name == "development":
-        sys.path.append("F:\\北汽\\codelast\\git_fuzz\\configs")
+        # sys.path.append("F:\\北汽\\codelast\\git_fuzz\\configs")
         app.config.from_object("my_config.DevelopmentConfig")
     elif config_name == "production":
         app.config.from_object("my_config.ProductionConfig")
@@ -109,7 +109,7 @@ def create_app(config_name):
     # config[config_name].init_app(app)
 
     moment.init_app(app)
-    # db.init_app(app)
+    db.init_app(app)
     Migrate(app, db)
     loginmanager.init_app(app)
     captcha.init_app(app)

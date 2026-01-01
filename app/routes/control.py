@@ -73,9 +73,16 @@ def start_control():
         _status["start_time"] = int(time.time())
         # 记录启动时的 run_id 基线
         try:
-            db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI", os.path.join("app", "db.db"))
+            db_path = current_app.config.get("DATABASE")
+            if not db_path:
+                db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI", os.path.join("app", "db.db"))
+                if db_url.startswith("sqlite:///"):
+                    db_path = db_url.replace("sqlite:///", "")
+                else:
+                    db_path = db_url
+
             import sqlite3
-            conn = sqlite3.connect(db_url)
+            conn = sqlite3.connect(db_path)
             cur = conn.cursor()
             cur.execute("SELECT MAX(run_id) FROM test_runs")
             row = cur.fetchone()
@@ -188,7 +195,7 @@ def export_assets():
     return send_file(mem, as_attachment=True, download_name="test_results.zip", mimetype="application/zip")
 
 
-@base.route("/config", methods=["GET"])
+@base.route("/config/data", methods=["GET"])
 def get_config():
     """获取当前配置"""
     # 从 DATABASE 配置中提取数据库名称
@@ -212,7 +219,7 @@ def get_config():
     return jsonify(config_data)
 
 
-@base.route("/config", methods=["POST"])
+@base.route("/config/data", methods=["POST"])
 def save_config():
     """保存配置（运行时更新）"""
     data = request.get_json()

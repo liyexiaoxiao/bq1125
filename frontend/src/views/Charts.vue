@@ -456,6 +456,59 @@ const extractSignals = (records) => {
   }
 }
 
+const detectExtrema = (values) => {
+  if (values.length < 3) return { maxima: [], minima: [] }
+  const maxima = []
+  const minima = []
+  for (let i = 1; i < values.length - 1; i++) {
+    // 极大值：比前后都大
+    if (values[i] > values[i-1] && values[i] > values[i+1]) {
+      maxima.push(i)
+    } 
+    // 极小值：比前后都小
+    else if (values[i] < values[i-1] && values[i] < values[i+1]) {
+      minima.push(i)
+    }
+  }
+  return { maxima, minima }
+}
+
+const compareTrends = (values1, values2, tolerance = 1) => {
+  const { maxima: max1, minima: min1 } = detectExtrema(values1)
+  const { maxima: max2, minima: min2 } = detectExtrema(values2)
+  
+  const anomalyIndices = new Set()
+  
+  // 检查极大值位置是否匹配
+  for (const idx1 of max1) {
+    if (!max2.some(idx2 => Math.abs(idx1 - idx2) <= tolerance)) {
+      anomalyIndices.add(idx1)
+    }
+  }
+  
+  // 检查极小值位置是否匹配
+  for (const idx1 of min1) {
+    if (!min2.some(idx2 => Math.abs(idx1 - idx2) <= tolerance)) {
+      anomalyIndices.add(idx1)
+    }
+  }
+  
+  // 也检查对方有但己方没有的极值点
+  for (const idx2 of max2) {
+    if (!max1.some(idx1 => Math.abs(idx2 - idx1) <= tolerance)) {
+      anomalyIndices.add(idx2)
+    }
+  }
+  
+  for (const idx2 of min2) {
+    if (!min1.some(idx1 => Math.abs(idx2 - idx1) <= tolerance)) {
+      anomalyIndices.add(idx2)
+    }
+  }
+  
+  return Array.from(anomalyIndices).sort((a, b) => a - b)
+}
+
 const renderSignalChart = () => {
   if (!Chart || !signal1.value) return
   
@@ -493,18 +546,21 @@ const renderSignalChart = () => {
       labels.push(runId)
       data1.push(val1)
       data2.push(val2)
-      
-      // 对比模式下检测异常（两个信号值不同）
-      if (viewMode.value === 'compare' && signal2.value && val2 !== null && val1 !== val2) {
-        anomalies.value.push({
-          dataIndex: idx + 1,
-          runId: runId,
-          value1: val1,
-          value2: val2
-        })
-      }
     }
   })
+
+  // 使用极值对比逻辑检测异常
+  if (viewMode.value === 'compare' && signal2.value) {
+    const anomalyIndices = compareTrends(data1, data2)
+    anomalyIndices.forEach(idx => {
+      anomalies.value.push({
+        dataIndex: idx + 1,
+        runId: labels[idx],
+        value1: data1[idx],
+        value2: data2[idx]
+      })
+    })
+  }
   
   const datasets = [{
     label: signal1.value,
@@ -533,7 +589,7 @@ const renderSignalChart = () => {
   // 对比模式下添加异常标记
   if (viewMode.value === 'compare' && showAnomalies.value && anomalies.value.length > 0) {
     const anomalyData = labels.map((label, idx) => {
-      const isAnomaly = anomalies.value.some(a => a.dataIndex === label)
+      const isAnomaly = anomalies.value.some(a => a.runId === label)
       return isAnomaly ? Math.max(data1[idx] || 0, data2[idx] || 0) : null
     })
     

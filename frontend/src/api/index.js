@@ -35,10 +35,10 @@ export const exportApi = {
 // 配置接口
 export const configApi = {
   // 获取配置
-  get: () => api.get('/config'),
+  get: () => api.get('/config/data'),
   
   // 保存配置
-  save: (config) => api.post('/config', config)
+  save: (config) => api.post('/config/data', config)
 }
 
 // 图表数据接口
