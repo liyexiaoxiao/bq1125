@@ -37,7 +37,7 @@ class Config:
     REPLAY_SOURCE_DATABASE_URI = os.environ.get('REPLAY_SOURCE_DATABASE_URI') or _db_path
     REPLAY_DATABASE_URI = os.environ.get('REPLAY_DATABASE_URI') or os.path.join(basedir, 'app', 'replay.db')
 
-    # SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
     # SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     # FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
     # FLASKY_MAIL_SENDER = '119161229@qq.com'
@@ -63,9 +63,10 @@ class DevelopmentConfig(Config):
 
 
 class TestingConfig(Config):
-    TESTING = False
-    # SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URI') or \
-    #                           'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
+    TESTING = True
+    SECRET_KEY = 'test_secret_key'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    WTF_CSRF_ENABLED = False
 
 
 class ProductionConfig(Config):

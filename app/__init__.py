@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 # from app.config import config
@@ -102,6 +102,8 @@ def create_app(config_name):
         app.config.from_object("my_config.DevelopmentConfig")
     elif config_name == "production":
         app.config.from_object("my_config.ProductionConfig")
+    elif config_name == "testing":
+        app.config.from_object("my_config.TestingConfig")
 
     #  替换默认的json编码器
     app.json_encoder = CustomJSONEncoder
@@ -116,6 +118,31 @@ def create_app(config_name):
 
     from .base import base as base_blueprint
     app.register_blueprint(base_blueprint)
+
+    from .routes.auth import auth_bp
+    app.register_blueprint(auth_bp)
+
+    @app.before_request
+    def check_login():
+        if request.method == 'OPTIONS':
+            return
+        
+        # Allow static resources if served by Flask
+        if request.endpoint and 'static' in request.endpoint:
+            return
+            
+        # Allow auth routes
+        if request.endpoint and request.endpoint.startswith('auth.'):
+            return
+
+        # Explicitly allow login/logout if not covered by above (though they are in auth)
+        if request.path in ['/api/login', '/api/logout']:
+            return
+
+        # Check if user is authenticated
+        if not current_user.is_authenticated:
+            return jsonify({'code': 401, 'msg': '未登录，请先登录'}), 401
+
     excel.init_excel(app)
 
     return app
