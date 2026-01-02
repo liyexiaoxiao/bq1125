@@ -9,6 +9,21 @@ import time
 
 logger = setup_logger()
 
+def sanitize_params(params):
+    """Recursively sanitize sensitive information in parameters."""
+    if isinstance(params, dict):
+        sanitized = params.copy()
+        for key, value in sanitized.items():
+            if isinstance(key, str) and any(sensitive in key.lower() for sensitive in ['password', 'pwd', 'token', 'secret']):
+                sanitized[key] = '******'
+            else:
+                sanitized[key] = sanitize_params(value)
+        return sanitized
+    elif isinstance(params, list):
+        return [sanitize_params(item) for item in params]
+    else:
+        return params
+
 def log_operation(operation_name):
     def decorator(f):
         @wraps(f)
@@ -22,16 +37,18 @@ def log_operation(operation_name):
                 params = request.args.to_dict()
             else:  # POST/PUT
                 params = request.get_json(silent=True) or {}
+            
+            sanitized_params = sanitize_params(params)
                 
             # Log to console
-            logger.debug(f"Operation: {operation_name}, Method: {method}, Path: {path}, Params: {params}")
+            logger.debug(f"Operation: {operation_name}, Method: {method}, Path: {path}, Params: {sanitized_params}")
 
             # Save to database
             log_entry = OperationLog(
                 OPERATION_NAME=operation_name,
                 METHOD=method,
                 PATH=path,
-                PARAMS=str(params),
+                PARAMS=str(sanitized_params),
                 OPERATOR = current_user.NAME if current_user and current_user.is_authenticated else 'Anonymous'
             )
             db.session.add(log_entry)

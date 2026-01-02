@@ -2,8 +2,8 @@ version: '3'
 
 services:
   backend:
-    # build: .  <-- Comment this out
-    image: bq1125_backend  # <-- Use the manually built image name
+    build: .
+    image: bq1125_backend
     ports:
       - "5050:5000"
     volumes:
@@ -16,8 +16,8 @@ services:
     restart: always
 
   frontend:
-    # build: ./frontend  <-- Comment this out
-    image: bq1125_frontend # <-- Use the manually built image name
+    build: ./frontend
+    image: bq1125_frontend
     ports:
       - "8880:80"
     depends_on:
