@@ -10,7 +10,6 @@ from datetime import datetime
 from .. import  db
 import flask_excel as excel
 from .. import permission
-from app.utils.operationlog import log_operation
 import os
 
 
@@ -45,12 +44,12 @@ def syuser_delete(id):
     user = User.query.get(id)
     if user:
         db.session.delete(user)
+        db.session.commit()
 
     return jsonify({'code': 200, 'msg': '删除成功'})
 
 @base.route('/system/user/profile/updatePwd', methods=['PUT']) 
 @login_required
-@log_operation('修改密码')
 def syuser_update_pwd():
     user = User.query.get(current_user.ID)
 
@@ -108,8 +107,15 @@ def syuser_update_profile():
     if 'phonenumber' in request.json: user.PHONENUMBER = request.json['phonenumber']
 
     db.session.add(user)
+    db.session.commit()
 
     return jsonify({'code': 200, 'msg': '更新成功！'})
+
+@base.route('/system/user/list', methods=['GET'])
+@login_required
+def syuser_list():
+    users = User.query.all()
+    return jsonify({'code': 200, 'rows': [user.to_json() for user in users]})
 
 @base.route('/base/syuser/export', methods=['POST'])
 @login_required
@@ -143,6 +149,7 @@ def syuser_status_update():
     if 'status' in request.json: user.STATUS = request.json['status']
 
     db.session.add(user)
+    db.session.commit()
 
     return jsonify({'code': 200, 'msg': '操作成功'})
 
