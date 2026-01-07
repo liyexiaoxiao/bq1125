@@ -12,9 +12,11 @@ services:
       - ./testdata:/app/testdata:ro
       - ./start.py:/app/start.py:ro
       - ./uploads:/app/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - SECRET_KEY=fuzz_test_secret_key_change_in_production
-      - TEST_PLATFORM_URL=http://154.8.193.119:8020
+      - TEST_PLATFORM_URL=http://host.docker.internal:8020
     restart: unless-stopped
     networks:
       - fuzz-network

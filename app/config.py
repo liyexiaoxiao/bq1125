@@ -22,7 +22,7 @@ class Config:
     DIR_NAME = "test001"
     # 测试平台URL
     # TEST_PALTFORM_URL = "http://154.8.193.119:8020"
-    TEST_PALTFORM_URL = "http://154.8.193.119:8020"
+    TEST_PALTFORM_URL = os.environ.get("TEST_PLATFORM_URL", "http://154.8.193.119:8020")
     
     # reset_api = f'{TEST_PALTFORM_URL}/api/v1/reset'
     # map_api = f'{TEST_PALTFORM_URL}/api/v1/mapping'
