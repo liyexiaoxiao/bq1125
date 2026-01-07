@@ -4,6 +4,20 @@ import time
 import requests
 
 
+def _clean_response_text(response):
+    """清理响应内容，避免日志中出现HTML代码"""
+    try:
+        if response.status_code in [502, 503, 504]:
+            return f"Server Error {response.status_code}"
+        
+        text = response.text.strip()
+        if text.startswith("<!DOCTYPE") or text.startswith("<html") or text.startswith("<head"):
+            return f"Server returned HTML content (Status: {response.status_code})"
+        return text
+    except Exception:
+        return "Error reading response text"
+
+
 # 复位API
 def api_reset(self):
     try:
@@ -15,16 +29,22 @@ def api_reset(self):
         }
         response = requests.post(reset_url, json=reset_data)
         if response.status_code != 200:
-            self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {response.text}")
+            self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {_clean_response_text(response)}")
             return False
         else:
             self.logger.info("测试平台接口交互模块---发送复位消息---成功")
-        response_json = response.json()
-        if response_json.get("ok") == 1:
-            return True
-        else:
-            self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {response.text}")
+        
+        try:
+            response_json = response.json()
+            if response_json.get("ok") == 1:
+                return True
+            else:
+                self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {response_json}")
+                return False
+        except Exception:
+            self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {_clean_response_text(response)}")
             return False
+            
     except Exception as e:
         self.logger.error(f"测试平台接口交互模块---发送复位消息---异常: {str(e)}")
         return False
@@ -50,13 +70,13 @@ def api_get_map(self):
 
             # 打印响应状态码和响应内容
             print(f"Status Code: {response.status_code}")
-            print(f"Response Body: {response.text}")
+            print(f"Response Body: {_clean_response_text(response)}")
             try:
                 json_data = response.json()  # 自动处理 bytes -> str -> dict/list
                 print("JSON Data:", json_data)
             except requests.exceptions.JSONDecodeError as e:
                 print("响应内容不是有效的 JSON 格式:", e)
-                print("原始文本内容:", response.text)
+                print("原始文本内容:", _clean_response_text(response))
         except requests.exceptions.RequestException as e:
             print(f"请求出错: {e}")
     except Exception as e:

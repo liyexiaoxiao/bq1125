@@ -1,5 +1,6 @@
 from flask import request, jsonify, send_file, send_from_directory, current_app
 import os
+import shutil
 import threading
 import time
 import io
@@ -113,6 +114,8 @@ def control_status():
     with _lock:
         running = _status["running"]
     db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI", os.path.join("app", "db.db"))
+    if db_url.startswith("sqlite:///"):
+        db_url = db_url.replace("sqlite:///", "")
     conn = None
     runs_since_start = 0
     exceptions_since_start = 0
@@ -139,7 +142,7 @@ def control_status():
     if not running:
         runs_since_start = 0
         exceptions_since_start = 0
-    goal = getattr(DefaultConfig, "RUN_TIMES", 0)
+    goal = current_app.config.get("RUN_TIMES", getattr(DefaultConfig, "RUN_TIMES", 0))
     return jsonify({"running": running, "runs": runs_since_start, "goal": goal, "exceptions": exceptions_since_start})
 
 def _tail_lines(file_path, max_lines):
@@ -199,21 +202,21 @@ def export_assets():
 def get_config():
     """获取当前配置"""
     # 从 DATABASE 配置中提取数据库名称
-    database_path = getattr(DefaultConfig, "DATABASE", "app/db.db")
+    database_path = current_app.config.get("DATABASE", getattr(DefaultConfig, "DATABASE", "app/db.db"))
     # 提取文件名，去掉路径和后缀
     database_name = database_path.replace('app/', '').replace('app\\', '').replace('.db', '')
     
     config_data = {
-        "testPlatformUrl": getattr(DefaultConfig, "TEST_PALTFORM_URL", ""),
-        "runTimes": getattr(DefaultConfig, "RUN_TIMES", 1000),
-        "mode": getattr(DefaultConfig, "MODE", "MIX"),
-        "readInterval": getattr(DefaultConfig, "READ_INTERVAL", 100),
-        "signalTolerance": getattr(DefaultConfig, "SIGNAL_TOLERANCE", 0.1),
-        "singleVariationTime": getattr(DefaultConfig, "SINGLE_VARIATION_TIME", 10),
-        "multipleVariationTime": getattr(DefaultConfig, "MULTIPLE_VARIATION_TIME", 10),
-        "repeatVariationTime": getattr(DefaultConfig, "REPEAT_VARIATION_TIME", 20),
-        "replayStartRunId": getattr(DefaultConfig, "REPLAY_START_RUN_ID", None),
-        "replayEndRunId": getattr(DefaultConfig, "REPLAY_END_RUN_ID", None),
+        "testPlatformUrl": current_app.config.get("TEST_PALTFORM_URL", getattr(DefaultConfig, "TEST_PALTFORM_URL", "")),
+        "runTimes": current_app.config.get("RUN_TIMES", getattr(DefaultConfig, "RUN_TIMES", 1000)),
+        "mode": current_app.config.get("MODE", getattr(DefaultConfig, "MODE", "MIX")),
+        "readInterval": current_app.config.get("READ_INTERVAL", getattr(DefaultConfig, "READ_INTERVAL", 100)),
+        "signalTolerance": current_app.config.get("SIGNAL_TOLERANCE", getattr(DefaultConfig, "SIGNAL_TOLERANCE", 0.1)),
+        "singleVariationTime": current_app.config.get("SINGLE_VARIATION_TIME", getattr(DefaultConfig, "SINGLE_VARIATION_TIME", 10)),
+        "multipleVariationTime": current_app.config.get("MULTIPLE_VARIATION_TIME", getattr(DefaultConfig, "MULTIPLE_VARIATION_TIME", 10)),
+        "repeatVariationTime": current_app.config.get("REPEAT_VARIATION_TIME", getattr(DefaultConfig, "REPEAT_VARIATION_TIME", 20)),
+        "replayStartRunId": current_app.config.get("REPLAY_START_RUN_ID", getattr(DefaultConfig, "REPLAY_START_RUN_ID", None)),
+        "replayEndRunId": current_app.config.get("REPLAY_END_RUN_ID", getattr(DefaultConfig, "REPLAY_END_RUN_ID", None)),
         "databaseName": database_name,
     }
     return jsonify(config_data)
@@ -249,13 +252,31 @@ def save_config():
     if "databaseName" in data:
         db_name = data["databaseName"]
         db_path = os.path.join('app', f'{db_name}.db')
+        abs_db_path = os.path.abspath(db_path)
         
+        # 检查新数据库是否存在，如果不存在则从默认数据库复制
+        # 避免因缺少users表导致系统崩溃
+        if not os.path.exists(abs_db_path) or os.path.getsize(abs_db_path) == 0:
+            default_db = os.path.abspath(os.path.join('app', 'db.db'))
+            if os.path.exists(default_db):
+                try:
+                    shutil.copy(default_db, abs_db_path)
+                    current_app.logger.info(f"Initialized new database: {abs_db_path}")
+                except Exception as e:
+                    current_app.logger.error(f"Failed to copy database: {e}")
+
+        # 构造URI
+        if os.name == 'nt':  # Windows
+            db_uri = 'sqlite:///' + abs_db_path
+        else:
+            db_uri = 'sqlite:////' + abs_db_path
+
         # 更新所有相关的数据库配置
         setattr(DefaultConfig, "DATABASE", db_path)
-        setattr(DefaultConfig, "SQLALCHEMY_DATABASE_URI", db_path)
+        setattr(DefaultConfig, "SQLALCHEMY_DATABASE_URI", db_uri)
         setattr(DefaultConfig, "REPLAY_SOURCE_DATABASE_URI", db_path)
         current_app.config["DATABASE"] = db_path
-        current_app.config["SQLALCHEMY_DATABASE_URI"] = db_path
+        current_app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
         current_app.config["REPLAY_SOURCE_DATABASE_URI"] = db_path
     
     return jsonify({"ok": 1, "message": "Config updated"})
@@ -274,6 +295,8 @@ def get_charts_data():
         db_url = _temp_db_path
     else:
         db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI", os.path.join("app", "db.db"))
+        if db_url.startswith("sqlite:///"):
+            db_url = db_url.replace("sqlite:///", "")
     
     conn = None
     try:

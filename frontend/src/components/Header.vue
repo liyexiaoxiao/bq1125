@@ -56,7 +56,7 @@ const showHelp = inject('showHelp')
 const testStore = useTestStore()
 
 const userName = ref('北汽工程师')
-const userRole = ref('13579')
+// const userRole = ref('13579')
 
 // 使用 state 确保响应式
 const systemStatus = computed(() => testStore.state.systemStatus)

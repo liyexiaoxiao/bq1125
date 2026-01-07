@@ -7,6 +7,22 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
+      },
+      '/system': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
+      },
+      '/getInfo': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
+      },
+      '/base': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
+      },
       '/control': {
         target: 'http://localhost:5000',
         changeOrigin: true

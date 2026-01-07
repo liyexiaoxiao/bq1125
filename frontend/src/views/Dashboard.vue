@@ -168,10 +168,10 @@ const stopTest = async () => {
   }
 }
 
-const resetAndStart = () => {
+const handleReset = () => {
   if (isRunning.value) return
   testStore.reset()
-  startTest()
+  addLog('INFO', '面板数据已复位')
 }
 
 const exportData = async () => {

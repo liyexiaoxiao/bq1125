@@ -151,3 +151,7 @@ dsl_gen/
 !/Python38-build/**
 !*.pyd
 app/replay.db
+
+# Node
+node_modules/
+frontend/node_modules/
