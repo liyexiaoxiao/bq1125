@@ -13,6 +13,7 @@ def api_reset(self):
             "type": 1,  # 1-恢复
             "signals": []  # 恢复模式下不需要指定信号
         }
+        self.logger.info(f"准备发送复位请求到: {reset_url}")
         response = requests.post(reset_url, json=reset_data)
         if response.status_code != 200:
             self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {response.text}")
