@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    image: backend
     container_name: fuzz-backend
     ports:
       - "8000:8000"
@@ -14,13 +14,13 @@ services:
       - ./uploads:/app/uploads
     environment:
       - SECRET_KEY=fuzz_test_secret_key_change_in_production
-      - TEST_PALTFORM_URL=http://154.8.193.119:8020
+      - TEST_PLATFORM_URL=http://154.8.193.119:8020
     restart: unless-stopped
     networks:
       - fuzz-network
 
   frontend:
-    build: ./frontend
+    image: frontend
     container_name: fuzz-frontend
     ports:
       - "8880:80"

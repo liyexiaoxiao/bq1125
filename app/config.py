@@ -22,7 +22,7 @@ class Config:
     DIR_NAME = "test001"
     # 测试平台URL
     # TEST_PALTFORM_URL = "http://154.8.193.119:8020"
-    TEST_PALTFORM_URL = os.environ.get('TEST_PALTFORM_URL') or "http://127.0.0.1:8020"
+    TEST_PALTFORM_URL = "http://154.8.193.119:8020"
     
     # reset_api = f'{TEST_PALTFORM_URL}/api/v1/reset'
     # map_api = f'{TEST_PALTFORM_URL}/api/v1/mapping'
@@ -47,7 +47,7 @@ class Config:
     # 数据库对接地址
     # 数据库对接地址
     # SQLALCHEMY_DATABASE_URI = "sqlite:///app/db.db"
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'db.db')}"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///app/db.db"
     DATABASE = os.path.join(basedir, 'db.db')
     REPLAY_SOURCE_DATABASE_URI = os.path.join('app', 'db.db')
     REPLAY_DATABASE_URI = os.path.join('app', 'replay.db')
