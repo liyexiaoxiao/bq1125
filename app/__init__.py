@@ -97,11 +97,9 @@ def create_app(config_name):
     app = Flask(__name__)
     if config_name is None:
         config_name = "development"
-    if config_name == "development":
-        sys.path.append("F:\\北汽\\codelast\\git_fuzz\\configs")
-        app.config.from_object("my_config.DevelopmentConfig")
-    elif config_name == "production":
-        app.config.from_object("my_config.ProductionConfig")
+    from .config import config
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
 
     #  替换默认的json编码器
     app.json_encoder = CustomJSONEncoder

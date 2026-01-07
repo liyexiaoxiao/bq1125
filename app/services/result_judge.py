@@ -34,7 +34,7 @@ class ResultJudge:
         self.logger = logger
         self.config = config
         api_base_url = self.config.TEST_PALTFORM_URL
-        db_url = self.config.SQLALCHEMY_DATABASE_URI
+        db_url = self.config.DATABASE
         # self.api_base_url = api_base_url
         self.round_id = round_id
         # self.send_api = f"{self.api_base_url}/api/v1/send"
@@ -246,7 +246,7 @@ class ResultJudge:
                         vehicle_state = None
                         for item in actual_data:
                             # 假设整车状态信号的UUID是"35695f8f-14dd-11f0-a9e0-6c0b84df158f"
-                            if item.get("uuid") == "35695f8f-14dd-11f0-a9e0-6c0b84df158f":
+                            if item.get("uuid") == "35695f8f-14dd-11f0-a9e0-6c0b84df158f" or item.get("name") == "整车状态":
                                 vehicle_state = item.get("value")
                                 break
 

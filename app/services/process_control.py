@@ -41,7 +41,7 @@ class ProcessCtrl:
         # api_get_map(self)
 
         # 初始测试结果判断模块实例前，先生成当前轮次的id：round_id
-        db_handler = TestResultHandler(self.logger, db_url=self.config.SQLALCHEMY_DATABASE_URI, app=self.app)
+        db_handler = TestResultHandler(self.logger, db_url=self.config.DATABASE, app=self.app)
         previous_round_id = db_handler.get_latest_round_id()  # 获取最新轮次id
         # 处理没有记录或发生异常的情况
         if previous_round_id is None:
@@ -116,13 +116,13 @@ class ProcessCtrl:
             judge = ResultJudge(self.logger, config=self.config, round_id=current_round_id, app=self.app)
             while True:
                 # 测试平台接口交互模块发，送复位消息，成功继续运行，失败继续下一个用例
-                if self.reset==False:
-                    bak = api_reset(self)
-                    self.reset=True
-                if bak:
-                    pass
-                else:
-                    continue
+                if not self.reset:
+                    success = api_reset(self)
+                    if success:
+                        self.reset = True
+                    else:
+                        time.sleep(1)
+                        continue
 
                 # 测试输入数据变异模块---取出数据
                 tast_data = data_variation.pop_first_data()

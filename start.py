@@ -32,9 +32,17 @@ if __name__ == '__main__':
     conf = Config()
     # 运行进程控制模块
     pro = ProcessCtrl(logger, conf, app)
-    pro.run()
-    # thread = threading.Thread(target=pro.run)
-    # thread.start()  # 启动线程
-    # thread.join()
+    
+    # Run in a daemon thread so it exits when main thread receives signal
+    thread = threading.Thread(target=pro.run)
+    thread.daemon = True
+    thread.start()
 
-    # app.run(debug=True)
+    try:
+        # Keep main thread alive to handle signals
+        while thread.is_alive():
+            thread.join(1)
+    except KeyboardInterrupt:
+        logger.info("Received stop signal, exiting...")
+        # Optional: pro.stop() if implemented
+

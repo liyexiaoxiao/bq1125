@@ -12,7 +12,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
 
     # 测试数据目录
-    DATA_DIR = current_directory + "\\testdata\\"
+    DATA_DIR = os.path.join(current_directory, "testdata")
     # 用例生成个数
     RUN_TIMES = 50
     # 模式：混合、全s、全w

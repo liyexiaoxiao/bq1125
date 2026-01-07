@@ -17,7 +17,7 @@ class DataInit:
         # self.out_data_dict = {"type": 0, "in_data": []}
 
         self.logger = logger
-        self.data_dir = config.DATA_DIR + config.DIR_NAME
+        self.data_dir = os.path.join(config.DATA_DIR, config.DIR_NAME)
 
     def read_file(self, filename):
         file_path = os.path.join(self.data_dir, filename)

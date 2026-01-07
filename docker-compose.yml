@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: fuzz-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./logs:/app/logs
+      - ./testdata:/app/testdata:ro
+      - ./start.py:/app/start.py:ro
+      - ./uploads:/app/uploads
+    environment:
+      - SECRET_KEY=fuzz_test_secret_key_change_in_production
+      - TEST_PALTFORM_URL=http://154.8.193.119:8020
+    restart: unless-stopped
+    networks:
+      - fuzz-network
+
+  frontend:
+    build: ./frontend
+    container_name: fuzz-frontend
+    ports:
+      - "8880:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - fuzz-network
+
+networks:
+  fuzz-network:
+    driver: bridge

@@ -15,8 +15,8 @@ class Logger:
         """
         # 获取当前目录
         current_directory = os.getcwd()
-        # 日志目录
-        log_dir = current_directory + "\\logs\\"
+        # 日志目录 - 使用 os.path.join 实现跨平台兼容
+        log_dir = os.path.join(current_directory, "logs")
         # 确保日志目录存在
         os.makedirs(log_dir, exist_ok=True)
 
