@@ -166,8 +166,7 @@ class ResultJudge:
             self.expected_results = test_data.get("expected_results", [])
 
             # 先读取当前系统中的信号并保存
-            self.logger.info("读取当前系统中的信号作为基准值")
-            initial_signals = self._get_test_result()
+            initial_signals = self._get_test_result(is_test_result=False)
             if initial_signals.get("status") != "success":
                 self.logger.error(f"读取初始信号失败: {initial_signals.get('message')}")
                 err = 1
@@ -212,6 +211,7 @@ class ResultJudge:
 
             # 使用预期结果中的整车状态作为目标值，如果不存在则按轮次设置默认目标
             target_state = None
+            is_wakeup_round = None
             for item in self.expected_results:
                 if item.get("name") == "整车State状态":
                     target_state = item.get("value")
@@ -233,7 +233,7 @@ class ResultJudge:
                     self.logger.info(f"读取信号，已过时间: {current_time - start_time:.2f}秒")
                     # 删除19秒
                     # time.sleep(19)
-                    result = self._get_test_result()
+                    result = self._get_test_result(is_test_result=True)
 
                     # 检查结果是否异常
                     if self._is_result_abnormal(result):
@@ -279,8 +279,9 @@ class ResultJudge:
             # 预期时间结束，如果没有得到明确结果，默认返回继续测试
             self.logger.info("预期时间结束，未得到明确结果，默认继续测试")
 
-        except Exception as err:
-            self.logger.error(f"测试结果判断过程中发生错误: {str(err.args[0])}")
+        except Exception as e:
+            self.logger.error(f"测试结果判断过程中发生错误: {str(e)}")
+            err = 1
 
         finally:
 
@@ -299,15 +300,21 @@ class ResultJudge:
                 self.stop_signal = False
                 return {"strategy": self.new_processing_strategy, "stop_signal": self.stop_signal, "in_data": in_data}
 
-    def _get_test_result(self) -> Dict[str, Any]:
+    def _get_test_result(self, is_test_result=False) -> Dict[str, Any]:
         """
         获取测试结果
+
+        Args:
+            is_test_result: 是否为测试结果读取（True）还是初始信号读取（False）
 
         Returns:
             Dict: 测试结果
         """
-        self.logger.info("获取测试结果")
-        return read_api(self)
+        if is_test_result:
+            self.logger.info("获取测试结果")
+        else:
+            self.logger.info("读取当前系统中的信号作为基准值")
+        return read_api(self, is_test_result)
         # try:
         #     # 获取需要读取的信号列表
         #     signal_names = list(self.signal_mapping.values())

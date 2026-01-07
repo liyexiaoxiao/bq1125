@@ -18,7 +18,7 @@ class Config:
     # 模式：混合、全s、全w
 
     # 测试平台URL
-    TEST_PALTFORM_URL = "http://127.0.0.1:8080"
+    TEST_PALTFORM_URL = "https://krunapi.vtest.work:8020"
     # 数据库对接地址
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI') or \
     #                           'mysql+mysqlconnector://root:admin123@localhost:3306/test?charset=utf8'  # 在开发环境中连接本地mysql数据库

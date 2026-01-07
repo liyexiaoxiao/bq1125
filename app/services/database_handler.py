@@ -19,7 +19,11 @@ class TestResultHandler:
         # Session = sessionmaker(bind=self.engine)
         # self.session = Session()
         self.app = app
-        self.database = db_url
+        # 处理SQLAlchemy URI，提取文件路径
+        if db_url.startswith('sqlite:///'):
+            self.database = db_url[10:]  # 移除 'sqlite:///' 前缀
+        else:
+            self.database = db_url
 
     def store_test_result(self, actual_duration, test_data_file=None, test_data=None, result_data=None, strategy=0,
                           round_id=None):
