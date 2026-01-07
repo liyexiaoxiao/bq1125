@@ -19,8 +19,8 @@ services:
       - SECRET_KEY=fuzz_test_secret_key_change_in_production
       - TEST_PLATFORM_URL=http://host.docker.internal:8020
     restart: unless-stopped
-    networks:
-      - fuzz-network
+    # networks:
+    #   - fuzz-network
 
   frontend:
     image: frontend
@@ -31,9 +31,9 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    networks:
-      - fuzz-network
+    # networks:
+    #   - fuzz-network
 
-networks:
-  fuzz-network:
-    driver: bridge
+# networks:
+#   fuzz-network:
+#     driver: bridge
