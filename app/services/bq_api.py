@@ -13,7 +13,7 @@ def api_reset(self):
             "type": 1,  # 1-恢复
             "signals": []  # 恢复模式下不需要指定信号
         }
-        response = requests.post(reset_url, json=reset_data, timeout=5)
+        response = requests.post(reset_url, json=reset_data, timeout=30)
         if response.status_code != 200:
             self.logger.error(f"测试平台接口交互模块---发送复位消息---失败: {response.text}")
             return False
@@ -46,7 +46,7 @@ def api_get_map(self):
         }
         # 发送 POST 请求
         try:
-            response = requests.post(url, json=data, headers=headers, verify=True, timeout=5)  # verify=True 表示验证 SSL 证书
+            response = requests.post(url, json=data, headers=headers, verify=True, timeout=30)  # verify=True 表示验证 SSL 证书
 
             # 打印响应状态码和响应内容
             print(f"Status Code: {response.status_code}")
@@ -88,7 +88,7 @@ def read_api(self):
         #     payload.append(item["name"])
 
         # 发送请求
-        response = requests.post(read_api, json=payload, timeout=5)
+        response = requests.post(read_api, json=payload, timeout=30)
 
         # 解析响应
         if response.status_code == 200:
@@ -148,7 +148,7 @@ def send_api(self, signal_data):
 
         # 发送请求
         self.logger.info(f"发送信号: {json.dumps(payload, ensure_ascii=False)}")
-        response = requests.post(send_api, json=payload, timeout=5)
+        response = requests.post(send_api, json=payload, timeout=30)
 
         # 解析响应
         if response.status_code == 200:
