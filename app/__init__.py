@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 # from app.config import config
 from flask_login import LoginManager
 import flask_excel as excel
@@ -105,6 +106,9 @@ def create_app(config_name):
     elif config_name == "testing":
         app.config.from_object("my_config.TestingConfig")
 
+    # 启用 CORS 支持，允许前端跨域访问
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
     #  替换默认的json编码器
     app.json_encoder = CustomJSONEncoder
     # app.config.from_object(config[config_name])
@@ -137,6 +141,14 @@ def create_app(config_name):
 
         # Explicitly allow login/logout if not covered by above (though they are in auth)
         if request.path in ['/api/login', '/api/logout']:
+            return
+
+        # Allow API endpoints without authentication for development
+        api_whitelist = [
+            '/control/', '/charts/', '/logs/', '/config/', 
+            '/export', '/', '/assets/'
+        ]
+        if any(request.path.startswith(path) for path in api_whitelist):
             return
 
         # Check if user is authenticated

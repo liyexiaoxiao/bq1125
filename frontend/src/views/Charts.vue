@@ -27,20 +27,6 @@
           <div class="h-8 w-px bg-gray-300 mx-2 hidden md:block"></div>
 
           <div class="flex items-center gap-2">
-            <label class="font-medium text-gray-700 whitespace-nowrap">选择轮次:</label>
-            <select 
-              v-model="selectedRound"
-              @change="fetchChartData"
-              class="form-select rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 py-2 px-3 border bg-white"
-            >
-              <option value="all">全部轮次</option>
-              <option v-for="round in rounds" :key="round" :value="round">
-                轮次 #{{ round }}
-              </option>
-            </select>
-          </div>
-
-          <div class="flex items-center gap-2">
             <label class="font-medium text-gray-700 whitespace-nowrap">数据范围:</label>
             <input 
               v-model.number="startIndex" 
@@ -120,18 +106,7 @@
               <option v-for="sig in availableSignals" :key="sig" :value="sig">{{ sig }}</option>
             </select>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="font-medium text-gray-700 whitespace-nowrap">数据源:</label>
-            <select 
-              v-model="dataSource"
-              @change="renderSignalChart"
-              class="form-select rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 py-2 px-3 border bg-white"
-            >
-              <option value="actual_output">实际输出</option>
-              <option value="expected_output">预期输出</option>
-              <option value="actual_input">实际输入</option>
-            </select>
-          </div>
+
           <label v-if="viewMode === 'compare'" class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" v-model="showAnomalies" @change="renderSignalChart" class="rounded border-gray-300">
             <span class="text-sm text-gray-700">标记异常</span>
